@@ -59,11 +59,15 @@ canvas.create_text(w2, h2, text="Countdown!",
                        fill='red', font=('Times', fh1))
 canvas.pack()
 
-flake = [];
+flake = []
 moves = []
+color = ["white", "orange", "white", "yellow", "white", "cyan", "white", "blue", "white", "violet"]
 for i in range(nsf):
-    flake.append(canvas.create_text(random.randrange(w),random.randrange(h),text="*",
-                                    fill='white',font=('Times', fh3)))
+    flake.append(canvas.create_text(random.randrange(w),
+                                    random.randrange(h),
+                                    text="*",
+                                    fill=random.choice(color),
+                                    font=('Times', fh3)))
     moves.append([wind + wind*random.random(), speed + speed*random.random()])
 
 
@@ -112,9 +116,14 @@ def update_snow():
         p = canvas.coords(flake[i])
         p[0]+=moves[i][0]
         p[1]+=moves[i][1]
-        canvas.coords(flake[i],p[0],p[1])
+        canvas.coords(flake[i], p[0], p[1])
         if(p[1]>h+10):
-            canvas.coords(flake[i],random.randrange(w),-10)
+            canvas.coords(flake[i], random.randrange(w), -10)
+            canvas.itemconfigure(flake[i], fill=random.choice(color))
+#            if(random.random()>0.99):
+#                canvas.itemconfigure(flake[i], text="@")
+#            else:
+#                canvas.itemconfigure(flake[i], text="*")
 
     tk.after(50, update_snow)
 
