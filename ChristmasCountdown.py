@@ -82,9 +82,14 @@ def update():
     mins = str(59 - int(datetime.now().strftime('%M')))
     secs = str(59 - int(datetime.now().strftime('%S')))
 
+    days_unit = ' day ' if days=='1' else ' days '
+    hours_unit = ' hour ' if days=='1' else ' hours '
+    mins_unit = ' min ' if days=='1' else ' mins '
+    secs_unit = ' second ' if secs=='1' else ' seconds '
+
     if d >= 0:
-        time_str1 = days+' days '+hours+' hours'
-        time_str2 = mins+' mins '+secs+' seconds'
+        time_str1 = days + days_unit + hours + hours_unit
+        time_str2 = mins + mins_unit + secs + secs_unit
     elif d == -1:
         time_str1 = "It's Christmas Day!"
         time_str2 = ""
