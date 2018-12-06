@@ -63,12 +63,14 @@ flake = []
 moves = []
 color = ["white", "orange", "white", "yellow", "white", "cyan", "white", "blue", "white", "violet"]
 for i in range(nsf):
+    s = speed + speed*random.random()*3
     flake.append(canvas.create_text(random.randrange(w),
                                     random.randrange(h),
                                     text="*",
                                     fill=random.choice(color),
-                                    font=('Times', fh3)))
-    moves.append([wind + wind*random.random(), speed + speed*random.random()])
+                                    font=('Times', int(fh3 * s/speed/4))))
+    moves.append([wind + wind*random.random(), s])
+
 
 
 def update():
@@ -120,11 +122,15 @@ def update_snow():
         if(p[1]>h+10):
             canvas.coords(flake[i], random.randrange(w), -10)
             canvas.itemconfigure(flake[i], fill=random.choice(color))
-#            if(random.random()>0.99):
+            if(random.random()>0.99):    # send a small proportion back up
+                moves[i][1] = -moves[i][1]   
+                canvas.coords(flake[i], random.randrange(w), h)
 #                canvas.itemconfigure(flake[i], text="@")
 #            else:
 #                canvas.itemconfigure(flake[i], text="*")
-
+        if(p[1]<-10):     # stop those going up forever
+           moves[i][1] = abs(moves[i][1])
+           
     tk.after(50, update_snow)
 
   
