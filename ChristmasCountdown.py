@@ -89,8 +89,8 @@ def update():
     secs = str(59 - int(datetime.now().strftime('%S')))
 
     days_unit = ' day ' if days=='1' else ' days '
-    hours_unit = ' hour ' if days=='1' else ' hours '
-    mins_unit = ' min ' if days=='1' else ' mins '
+    hours_unit = ' hour ' if hours=='1' else ' hours '
+    mins_unit = ' min ' if mins=='1' else ' mins '
     secs_unit = ' second ' if secs=='1' else ' seconds '
 
     if d >= 0:
