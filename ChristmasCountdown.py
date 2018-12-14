@@ -12,6 +12,9 @@ from Tkinter import *
 
 tk = Tk()
 
+version_str = "1.3.1"
+print "Christmas Countdown: version ", version_str
+
 # screen size
 w, h = tk.winfo_screenwidth(), tk.winfo_screenheight()
 #w, h = 480, 320
@@ -42,6 +45,8 @@ speed = h / 300.0
 wind = w / 10000.0
 print "wind, speed, ", wind, speed
 
+time.sleep(4)
+
 #tk.overrideredirect(1)
 tk.geometry("%dx%d+0+0" % (w, h))
 
@@ -57,7 +62,9 @@ canvas.create_text(w2, h1, text="Christmas",
 
 canvas.create_text(w2, h2, text="Countdown!",
                        fill='red', font=('Times', fh1))
+
 canvas.pack()
+
 
 flake = []
 moves = []
