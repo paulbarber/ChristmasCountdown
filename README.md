@@ -18,3 +18,9 @@ From the console (not inside a desktop session):
 
 Escape or Ctrl-C in the window also quits. The scripts find each other relative to their
 own folder, so the repo can live anywhere.
+
+## Browser version
+
+`index.html` is a self-contained version that runs in any browser (no install, no Pi).
+Hosted with GitHub Pages at https://paulbarber.github.io/ChristmasCountdown/ -
+click or tap for full screen. It uses the device's own clock.

@@ -1,0 +1,143 @@
+<!doctype html>
+<!-- Christmas Countdown, browser version. Copyright PR Barber. GPL-3.0 (see LICENSE). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Christmas Countdown</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  body.idle { cursor: none; }
+  #hint {
+    position: fixed; bottom: 12px; left: 0; right: 0; text-align: center;
+    font: 14px sans-serif; color: #888; transition: opacity 1s;
+  }
+  body.idle #hint { opacity: 0; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">Click or tap for full screen</div>
+<script>
+"use strict";
+
+// --- Countdown logic (same schedule as the Python version) ---
+// until 25 Dec: to Christmas | 25 Dec: Christmas Day | 26-31 Dec: to New Year
+// 1 Jan: Happy New Year | from 2 Jan: to next Christmas
+function countdownState(now) {
+  const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+  if (m === 12 && d === 25) return ["Christmas", "It's Christmas Day!", ""];
+  if (m === 1 && d === 1) return ["New Year", "Happy New Year!", ""];
+  let title, target;
+  if (m === 12 && d > 25) { title = "New Year"; target = new Date(y + 1, 0, 1); }
+  else { title = "Christmas"; target = new Date(y, 11, 25); }
+
+  // Count in calendar days/hours so clock changes (BST/GMT) don't skew it
+  let s = Math.floor((target - now) / 1000);
+  const tz = (target.getTimezoneOffset() - now.getTimezoneOffset()) * 60;
+  s -= tz;
+  const days = Math.floor(s / 86400); s -= days * 86400;
+  const hours = Math.floor(s / 3600); s -= hours * 3600;
+  const mins = Math.floor(s / 60), secs = s - mins * 60;
+  const u = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+  return [title, u(days, "day") + " " + u(hours, "hour"), u(mins, "min") + " " + u(secs, "second")];
+}
+
+if (typeof document !== "undefined") {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const colours = ["white", "orange", "white", "yellow", "white",
+                   "cyan", "white", "blue", "white", "violet"];
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  let w, h, flakes = [];
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const speed = h / 300, wind = w / 10000;
+    flakes = Array.from({ length: 30 }, () => {
+      const s = speed + speed * Math.random() * 3;
+      return { x: Math.random() * w, y: Math.random() * h,
+               dx: wind + wind * Math.random(), dy: s,
+               size: (h / 16) * s / speed / 4, colour: pick(colours) };
+    });
+  }
+
+  // Draw text at size, shrinking it if it would overflow the width
+  function text(str, y, size, colour) {
+    ctx.font = size + "px Times, 'Times New Roman', serif";
+    const tw = ctx.measureText(str).width;
+    if (tw > w * 0.94) ctx.font = (size * w * 0.94 / tw) + "px Times, 'Times New Roman', serif";
+    ctx.fillStyle = colour;
+    ctx.fillText(str, w / 2, y);
+  }
+
+  let last = performance.now();
+  function frame(t) {
+    // Move snow at the Python version's pace (one step per 50 ms)
+    const k = Math.min((t - last) / 50, 4); last = t;
+    for (const f of flakes) {
+      f.x += f.dx * k; f.y += f.dy * k;
+      if (f.y > h + 10) {
+        f.x = Math.random() * w; f.y = -10; f.colour = pick(colours);
+        if (Math.random() > 0.99) { f.dy = -Math.abs(f.dy); f.y = h; }   // a few go back up
+      } else if (f.y < -10) f.dy = Math.abs(f.dy);
+      if (f.x > w + 10) f.x = -10;
+    }
+
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+
+    const [title, l1, l2] = countdownState(new Date());
+    text(title, 0.22 * h, h / 6, "red");
+    text("Countdown!", 0.42 * h, h / 6, "red");
+    text(l1, 0.68 * h, h / 8, "green");
+    text(l2, 0.82 * h, h / 8, "green");
+
+    for (const f of flakes) {
+      ctx.font = f.size + "px Times, serif";
+      ctx.fillStyle = f.colour;
+      ctx.fillText("*", f.x, f.y);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // Full screen on click/tap
+  document.addEventListener("click", () => {
+    try {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    } catch (e) { /* not supported (e.g. iPhone) */ }
+  });
+
+  // Hide cursor and hint after 3 s without movement
+  let idleTimer;
+  function wake() {
+    document.body.classList.remove("idle");
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => document.body.classList.add("idle"), 3000);
+  }
+  ["mousemove", "touchstart", "keydown"].forEach(e => document.addEventListener(e, wake));
+  wake();
+
+  // Keep the screen from sleeping where the browser allows it
+  async function keepAwake() {
+    try { if ("wakeLock" in navigator) await navigator.wakeLock.request("screen"); } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") keepAwake();
+  });
+  keepAwake();
+
+  window.addEventListener("resize", resize);
+  resize();
+  requestAnimationFrame(frame);
+}
+
+if (typeof module !== "undefined") module.exports = { countdownState };
+</script>
+</body>
+</html>
