@@ -1,8 +1,20 @@
 # ChristmasCountdown
 
-A python program and scripts to show a days, hours, min and seconds until Christmas Day.
+A Python 3 program and scripts to show days, hours, mins and seconds until Christmas Day,
+with falling snow. After Christmas it counts down to New Year, then on to the next Christmas.
+
 Intended for use on a Raspberry Pi without the desktop running. Runs full screen for use with a projector.
 
-TODO:
-Only really works from Dec 1 to Dec 25, maybe show countdown to New Year as well.
+## Setup (Raspberry Pi OS Lite)
 
+    sudo apt install python3-tk xserver-xorg xinit x11-xserver-utils
+
+## Use
+
+From the console (not inside a desktop session):
+
+    ./RUN_ChristmasCountdown.sh     # start
+    ./STOP_ChristmasCountdown.sh    # stop
+
+Escape or Ctrl-C in the window also quits. The scripts find each other relative to their
+own folder, so the repo can live anywhere.
