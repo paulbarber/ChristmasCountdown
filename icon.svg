@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Christmas Countdown icon. Copyright PR Barber. GPL-3.0. -->
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="35%" r="75%">
+      <stop offset="0" stop-color="#16213e"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+
+  <!-- snow, in the same colours as the countdown -->
+  <g font-family="Times, serif" font-size="56" text-anchor="middle">
+    <text x="92"  y="128" fill="#fff">*</text>
+    <text x="420" y="110" fill="cyan">*</text>
+    <text x="70"  y="300" fill="orange">*</text>
+    <text x="446" y="270" fill="#fff">*</text>
+    <text x="150" y="70"  fill="violet" font-size="40">*</text>
+    <text x="372" y="190" fill="yellow" font-size="40">*</text>
+  </g>
+
+  <!-- tree, kept inside the central safe zone for Android masks -->
+  <g fill="#1f9d3a">
+    <polygon points="256,118 186,218 326,218"/>
+    <polygon points="256,168 166,288 346,288"/>
+    <polygon points="256,228 146,360 366,360"/>
+  </g>
+  <rect x="236" y="360" width="40" height="64" fill="#7a4a1d"/>
+
+  <!-- baubles -->
+  <circle cx="222" cy="212" r="10" fill="#e8202a"/>
+  <circle cx="292" cy="262" r="10" fill="#ffcc00"/>
+  <circle cx="206" cy="326" r="10" fill="cyan"/>
+  <circle cx="306" cy="334" r="10" fill="#e8202a"/>
+  <circle cx="256" cy="298" r="9"  fill="#fff"/>
+
+  <!-- star -->
+  <polygon fill="#ffd700"
+    points="256,72 266,100 296,100 272,117 281,146 256,128 231,146 240,117 216,100 246,100"/>
+
+  <!-- snowy ground -->
+  <path d="M0 430 Q128 400 256 424 T512 418 V512 H0Z" fill="#e9f1ff"/>
+</svg>
