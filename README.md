@@ -29,4 +29,4 @@ On a phone, use "Add to Home Screen" (Safari share menu, or the Chrome menu) to 
 Christmas tree icon that opens the countdown full screen.
 
 Buttons along the bottom: **Flurry** (a burst of snow), **Fireworks** (5 seconds of fireworks)
-and **Donate** (opens the Alzheimer's Society donation page in a new tab).
+and **Donate** (opens the Christmas Countdown JustGiving page in a new tab).
