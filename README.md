@@ -27,3 +27,6 @@ click or tap for full screen. It uses the device's own clock.
 
 On a phone, use "Add to Home Screen" (Safari share menu, or the Chrome menu) to get a
 Christmas tree icon that opens the countdown full screen.
+
+Buttons along the bottom: **Flurry** (a burst of snow), **Fireworks** (5 seconds of fireworks)
+and **Donate** (opens the Alzheimer's Society donation page in a new tab).

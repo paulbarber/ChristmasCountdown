@@ -19,16 +19,38 @@
   canvas { display: block; width: 100vw; height: 100vh; }
   body.idle { cursor: none; }
   #hint {
-    position: fixed; bottom: 12px; left: 0; right: 0; text-align: center;
+    position: fixed; top: 10px; left: 0; right: 0; text-align: center;
     font: 14px sans-serif; color: #888; transition: opacity 1s;
   }
   body.idle #hint { opacity: 0; }
   @media (display-mode: fullscreen), (display-mode: standalone) { #hint { display: none; } }
+  #controls {
+    position: fixed; left: 0; right: 0;
+    bottom: max(1.5vh, env(safe-area-inset-bottom));
+    display: flex; justify-content: center; gap: min(3vw, 24px);
+  }
+  #controls button, #controls a {
+    font: bold clamp(13px, min(2.6vh, 3.8vw), 26px) sans-serif; white-space: nowrap; color: #fff;
+    padding: 0.5em 1em; border-radius: 999px; border: 2px solid rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.08); cursor: pointer; text-decoration: none;
+    -webkit-tap-highlight-color: transparent; transition: transform 0.1s, background 0.2s;
+  }
+  #controls button:hover, #controls a:hover { background: rgba(255,255,255,0.2); }
+  #controls button:active, #controls a:active { transform: scale(0.94); }
+  #flurry { border-color: #9fe8ff; }
+  #fireworks { border-color: #ffcc33; }
+  #donate { border-color: #ff6b8a; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="hint">Click or tap for full screen</div>
+<div id="controls">
+  <button id="flurry" type="button">❄ Flurry</button>
+  <button id="fireworks" type="button">✨ Fireworks</button>
+  <a id="donate" href="https://www.alzheimers.org.uk/get-involved/donate"
+     target="_blank" rel="noopener">♥ Donate</a>
+</div>
 <script>
 "use strict";
 
@@ -91,12 +113,15 @@ if (typeof document !== "undefined") {
     const k = Math.min((t - last) / 50, 4); last = t;
     for (const f of flakes) {
       f.x += f.dx * k; f.y += f.dy * k;
+      if (f.temp) { if (f.y > h + 10 || f.x > w + 10) f.dead = true; continue; }
       if (f.y > h + 10) {
         f.x = Math.random() * w; f.y = -10; f.colour = pick(colours);
         if (Math.random() > 0.99) { f.dy = -Math.abs(f.dy); f.y = h; }   // a few go back up
       } else if (f.y < -10) f.dy = Math.abs(f.dy);
       if (f.x > w + 10) f.x = -10;
     }
+    if (flakes.some(f => f.dead)) flakes = flakes.filter(f => !f.dead);
+    updateFireworks(t, k);
 
     ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -112,11 +137,81 @@ if (typeof document !== "undefined") {
       ctx.fillStyle = f.colour;
       ctx.fillText("*", f.x, f.y);
     }
+    drawFireworks();
     requestAnimationFrame(frame);
   }
 
+  // --- Flurry: a burst of extra, faster snow that falls away ---
+  function flurry() {
+    if (flakes.length > 800) return;           // don't let repeated taps pile up
+    const speed = h / 300, wind = w / 10000;
+    for (let i = 0; i < 200; i++) {
+      const s = speed * (3 + Math.random() * 4);
+      flakes.push({ x: Math.random() * w * 1.1 - w * 0.1, y: -10 - Math.random() * h * 0.5,
+                    dx: wind * (4 + Math.random() * 8), dy: s,
+                    size: (h / 16) * (0.3 + Math.random() * 0.9),
+                    colour: pick(colours), temp: true });
+    }
+  }
+
+  // --- Fireworks: rockets and bursts for 5 seconds ---
+  const fwColours = ["#ff3b3b", "#ffd700", "#3bff6b", "#3bd5ff", "#ff5bf0", "#ffffff", "#ff9a2e"];
+  let fwUntil = 0, fwNext = 0, rockets = [], sparks = [];
+  function fireworks() { fwUntil = performance.now() + 5000; }
+
+  function burst(x, y, colour) {
+    const n = 80 + Math.floor(Math.random() * 50), v = h / 110;
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = v * (0.4 + Math.random() * 0.8);
+      sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                    life: 1, decay: 0.012 + Math.random() * 0.012,
+                    colour: Math.random() < 0.15 ? "#fff" : colour });
+    }
+  }
+
+  function updateFireworks(t, k) {
+    if (t < fwUntil && t >= fwNext) {           // launch a rocket every 150-400 ms
+      rockets.push({ x: w * (0.1 + Math.random() * 0.8), y: h,
+                     vy: -h / 38 * (0.85 + Math.random() * 0.3),
+                     top: h * (0.12 + Math.random() * 0.35), colour: pick(fwColours) });
+      fwNext = t + 150 + Math.random() * 250;
+    }
+    for (const r of rockets) {
+      r.y += r.vy * k;
+      if (r.y <= r.top) { burst(r.x, r.y, r.colour); r.done = true; }
+    }
+    rockets = rockets.filter(r => !r.done);
+    const g = h / 4000;
+    for (const p of sparks) {
+      p.vx *= Math.pow(0.97, k); p.vy = p.vy * Math.pow(0.97, k) + g * k;
+      p.x += p.vx * k; p.y += p.vy * k; p.life -= p.decay * k;
+    }
+    sparks = sparks.filter(p => p.life > 0);
+  }
+
+  function drawFireworks() {
+    if (!rockets.length && !sparks.length) return;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const r = Math.max(2, h / 260);
+    for (const p of rockets) {
+      ctx.fillStyle = "#ffe9b0";
+      ctx.fillRect(p.x - r / 2, p.y, r, r * 6);
+    }
+    for (const p of sparks) {
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.colour;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  document.getElementById("flurry").addEventListener("click", flurry);
+  document.getElementById("fireworks").addEventListener("click", fireworks);
+
   // Full screen on click/tap
-  document.addEventListener("click", () => {
+  document.addEventListener("click", e => {
+    if (e.target.closest("#controls")) return;
     try {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen();
       else document.exitFullscreen();
