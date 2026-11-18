@@ -40,6 +40,16 @@
   #flurry { border-color: #9fe8ff; }
   #fireworks { border-color: #ffcc33; }
   #donate { border-color: #ff6b8a; }
+  #controls button:disabled { opacity: 0.5; }
+  #toast {
+    position: fixed; left: 50%; bottom: calc(max(1.5vh, env(safe-area-inset-bottom)) + 4.5em);
+    transform: translateX(-50%); font: 15px sans-serif; color: #fff;
+    background: rgba(40,120,60,0.85); padding: 0.4em 1em; border-radius: 999px;
+    opacity: 0; transition: opacity 0.4s; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+  /* index.html?projector : the copy shown in the window listens for presses and hides the buttons */
+  body.projector #controls, body.projector #hint, body.projector #toast { display: none; }
 </style>
 </head>
 <body>
@@ -51,6 +61,7 @@
   <a id="donate" href="https://www.justgiving.com/page/christmas-countdown?utm_source=CL&amp;utm_medium=DT"
      target="_blank" rel="noopener">♥ Donate</a>
 </div>
+<div id="toast"></div>
 <script>
 "use strict";
 
@@ -74,6 +85,26 @@ function countdownState(now) {
   const mins = Math.floor(s / 60), secs = s - mins * 60;
   const u = (n, w) => n + " " + w + (n === 1 ? "" : "s");
   return [title, u(days, "day") + " " + u(hours, "hour"), u(mins, "min") + " " + u(secs, "second")];
+}
+
+// --- Remote buttons: which relay channel this copy uses (must match ChristmasCountdown.py) ---
+// The channel name mixes the "channel" in config.json with the GitHub owner/repo this copy runs
+// from, so a fork (or a copy hosted somewhere else) automatically gets its own separate channel.
+function normRepo(r) {
+  return String(r || "").trim().toLowerCase().replace(/\.git$/, "").replace(/^\/+|\/+$/g, "");
+}
+function siteRepo(loc) {                       // paulbarber.github.io/ChristmasCountdown -> paulbarber/christmascountdown
+  const host = loc.hostname.toLowerCase();
+  const seg = loc.pathname.split("/").filter(Boolean)[0] || "";
+  const m = host.match(/^([a-z0-9-]+)\.github\.io$/);
+  if (m) return normRepo(m[1] + "/" + (seg && !seg.includes(".") ? seg : host));
+  return normRepo(host + "/" + (seg.includes(".") ? "" : seg));
+}
+async function topicFor(channel, repo) {
+  const data = new TextEncoder().encode(channel + "|" + repo);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  const hex = Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
+  return "xmascd-" + hex.slice(0, 24);
 }
 
 if (typeof document !== "undefined") {
@@ -206,8 +237,76 @@ if (typeof document !== "undefined") {
     ctx.restore();
   }
 
-  document.getElementById("flurry").addEventListener("click", flurry);
-  document.getElementById("fireworks").addEventListener("click", fireworks);
+  function doAction(a) {
+    if (a === "flurry") flurry();
+    else if (a === "fireworks") fireworks();
+  }
+
+  // --- Remote: visitors' presses go to every projector on the same channel ---
+  const projector = new URLSearchParams(location.search).has("projector");
+  if (projector) document.body.classList.add("projector");
+  const clientId = Math.random().toString(36).slice(2, 10);
+  const cdRemote = window.cdRemote = { status: "off", projector, received: [] };
+  let relayUrl = null;
+
+  async function setupRemote() {
+    try {
+      const cfg = await (await fetch("config.json", { cache: "no-store" })).json();
+      if (!cfg.remote_buttons || !cfg.relay || !cfg.channel) return;
+      const repo = normRepo(cfg.repo) || siteRepo(location);
+      const topic = await topicFor(cfg.channel, repo);
+      relayUrl = String(cfg.relay).replace(/\/+$/, "") + "/" + topic;
+      Object.assign(cdRemote, { status: "ready", repo, topic });
+      if (projector) listen();
+    } catch (e) { cdRemote.status = "off"; }   // e.g. opened as a local file: buttons still work locally
+  }
+
+  function send(action) {
+    if (!relayUrl || projector) return;
+    // text/plain body keeps this a "simple" request, so no CORS preflight is needed
+    fetch(relayUrl, { method: "POST", body: JSON.stringify({ action, from: clientId }) })
+      .then(r => { if (r.ok) toast("Sent to the window ✓"); })
+      .catch(() => {});
+  }
+
+  const lastSeen = {};
+  function listen() {
+    const es = new EventSource(relayUrl + "/sse");
+    es.onopen = () => { cdRemote.status = "listening"; };
+    es.onerror = () => { cdRemote.status = "reconnecting"; };   // EventSource retries by itself
+    es.onmessage = e => {
+      try {
+        const ev = JSON.parse(e.data);
+        if (ev.event && ev.event !== "message") return;
+        const msg = JSON.parse(ev.message);
+        if (msg.from === clientId || !["flurry", "fireworks"].includes(msg.action)) return;
+        const now = performance.now();               // at most one of each per 0.7 s
+        if (now - (lastSeen[msg.action] || 0) < 700) return;
+        lastSeen[msg.action] = now;
+        cdRemote.received.push(msg.action);
+        doAction(msg.action);
+      } catch (err) { /* ignore anything that isn't ours */ }
+    };
+  }
+
+  let toastTimer;
+  function toast(t) {
+    const el = document.getElementById("toast");
+    el.textContent = t; el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  for (const id of ["flurry", "fireworks"]) {
+    const btn = document.getElementById(id);
+    btn.addEventListener("click", () => {
+      doAction(id);
+      send(id);
+      btn.disabled = true;                            // short cooldown so one person can't flood it
+      setTimeout(() => { btn.disabled = false; }, 1500);
+    });
+  }
+  setupRemote();
 
   // Full screen on click/tap
   document.addEventListener("click", e => {
@@ -242,7 +341,7 @@ if (typeof document !== "undefined") {
   requestAnimationFrame(frame);
 }
 
-if (typeof module !== "undefined") module.exports = { countdownState };
+if (typeof module !== "undefined") module.exports = { countdownState, normRepo, siteRepo, topicFor };
 </script>
 </body>
 </html>

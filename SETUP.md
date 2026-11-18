@@ -72,6 +72,13 @@ About 30 seconds after the reboot the countdown should appear on the projector.
 If the countdown crashes, or someone presses Escape on an attached keyboard, it restarts by
 itself.
 
+## Remote buttons
+
+Nothing to set up: the Pi listens for Flurry and Fireworks presses on the web page as soon
+as it has WiFi. Every Pi cloned from the same repo responds. See *Remote buttons* in the
+README for how channels work. To check, press Fireworks on the website on your phone and
+watch the projector; it should respond within a second or two.
+
 ## Troubleshooting
 
 - **`countdown.local` not found**: wait a few minutes after first boot, check the WiFi
