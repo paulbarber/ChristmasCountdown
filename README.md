@@ -5,13 +5,18 @@ with falling snow. After Christmas it counts down to New Year, then on to the ne
 
 Intended for use on a Raspberry Pi without the desktop running. Runs full screen for use with a projector.
 
-## Setup (Raspberry Pi OS Lite)
+## Setup
+
+**See [SETUP.md](SETUP.md)** for step-by-step instructions to build a Raspberry Pi Zero 2 W
+box that starts the countdown automatically at power-on.
+
+In short, on Raspberry Pi OS Lite:
 
     sudo apt install python3-tk xserver-xorg xinit x11-xserver-utils
 
 ## Use
 
-From the console (not inside a desktop session):
+To run it by hand from the Pi's own console (not inside a desktop session or over SSH):
 
     ./RUN_ChristmasCountdown.sh     # start
     ./STOP_ChristmasCountdown.sh    # stop
